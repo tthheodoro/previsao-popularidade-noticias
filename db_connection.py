@@ -1,15 +1,15 @@
-import pymssql  # Trocámos o pyodbc por este
+import pymssql
 import pandas as pd
 
-# Mantém os teus dados do Azure iguais
-SERVER = 'tuas-credenciais.database.windows.net'
-DATABASE = 'ProjetoNoticiasDB'
-USERNAME = 'teu-user'
-PASSWORD = 'tua-password'
+# CONFIGURAÇÕES DO AZURE
+SERVER = 'servidorprevisaonoticias.database.windows.net'
+DATABASE = 'ProjetoNoticiasDB'                               
+USERNAME = 'previsaoadmin'                        
+PASSWORD = '@Adminprevisao' 
 
 def get_connection():
     try:
-        # A ligação com pymssql é ligeiramente mais simples
+        # O pymssql liga-se diretamente sem precisar de drivers ODBC no sistema
         return pymssql.connect(server=SERVER, user=USERNAME, password=PASSWORD, database=DATABASE)
     except Exception as e:
         print(f"❌ Erro de ligação ao Azure SQL: {e}")
@@ -19,55 +19,39 @@ def salvar_noticias_batch(df):
     conn = get_connection()
     if not conn: return
     cursor = conn.cursor()
-    
-    inseridos = 0
     for _, row in df.iterrows():
         try:
             cursor.execute("""
                 INSERT INTO Noticias (Titulo, Descricao, Link, DataPublicacao, Fonte, Categoria, N_Palavras_Titulo, N_Palavras_Desc, Dia_Semana, Hora, Sentimento)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %d, %d, %d, %d, %d)
             """, (
                 row['titulo'], row['descricao'], row['link'], row['data_publicacao'],
-                row['fonte'], row['categoria'], row['n_palavras_titulo'],
-                row['n_palavras_desc'], row['dia_semana'], row['hora'], row['sentimento']
+                row['fonte'], row['categoria'], int(row['n_palavras_titulo']),
+                int(row['n_palavras_desc']), int(row['dia_semana']), int(row['hora']), int(row['sentimento'])
             ))
-            inseridos += 1
-        except pyodbc.IntegrityError:
-            continue # Ignora duplicados silenciosamente
-        except Exception as e:
-            print(f"Erro ao inserir notícia: {e}")
-            
+        except: continue
     conn.commit()
     conn.close()
-    print(f"✅ Azure SQL: {inseridos} novas notícias inseridas.")
-
-def carregar_dados_treino():
-    conn = get_connection()
-    if not conn: return pd.DataFrame(), pd.DataFrame()
-    
-    query_noticias = "SELECT * FROM Noticias"
-    query_feedback = "SELECT * FROM Feedback"
-    
-    df_noticias = pd.read_sql(query_noticias, conn)
-    df_feedback = pd.read_sql(query_feedback, conn)
-    
-    conn.close()
-    return df_noticias, df_feedback
 
 def salvar_feedback(dados, realidade):
     conn = get_connection()
     if not conn: return
     cursor = conn.cursor()
-    
     cursor.execute("""
         INSERT INTO Feedback (Titulo_Input, Descricao_Input, Categoria_Input, N_Palavras_Titulo, N_Palavras_Desc, Sentimento, Dia_Semana, Hora, Popularidade_Real)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %d, %d, %d, %d, %d, %s)
     """, (
         dados.get('titulo', ''), dados.get('descricao', ''), dados['categoria'],
-        dados['n_palavras_titulo'], dados['n_palavras_desc'], dados['sentimento'],
-        dados['dia_semana'], dados['hora'], realidade
+        int(dados['n_palavras_titulo']), int(dados['n_palavras_desc']), int(dados['sentimento']),
+        int(dados['dia_semana']), int(dados['hora']), realidade
     ))
-    
     conn.commit()
     conn.close()
-    print(f"✅ Azure SQL: Feedback humano ('{realidade}') guardado com sucesso!")
+
+def carregar_dados_treino():
+    conn = get_connection()
+    if not conn: return pd.DataFrame(), pd.DataFrame()
+    df_noticias = pd.read_sql("SELECT * FROM Noticias", conn)
+    df_feedback = pd.read_sql("SELECT * FROM Feedback", conn)
+    conn.close()
+    return df_noticias, df_feedback

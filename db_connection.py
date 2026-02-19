@@ -1,20 +1,16 @@
-import pyodbc
+import pymssql  # Trocámos o pyodbc por este
 import pandas as pd
 
-# ==========================================
-# CONFIGURAÇÕES DA NUVEM (AZURE SQL) 
-# ==========================================
-SERVER = 'servidorprevisaonoticias.database.windows.net'
-DATABASE = 'ProjetoNoticiasDB'                               
-USERNAME = 'previsaoadmin'                        
-PASSWORD = '@Adminprevisao'                        
-
-# String de conexão otimizada para o Azure (Porta 1433 e Encriptação ativada)
-conn_str = f"DRIVER={{ODBC Driver 17 for SQL Server}};SERVER=tcp:{SERVER},1433;DATABASE={DATABASE};UID={USERNAME};PWD={PASSWORD};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+# Mantém os teus dados do Azure iguais
+SERVER = 'tuas-credenciais.database.windows.net'
+DATABASE = 'ProjetoNoticiasDB'
+USERNAME = 'teu-user'
+PASSWORD = 'tua-password'
 
 def get_connection():
     try:
-        return pyodbc.connect(conn_str)
+        # A ligação com pymssql é ligeiramente mais simples
+        return pymssql.connect(server=SERVER, user=USERNAME, password=PASSWORD, database=DATABASE)
     except Exception as e:
         print(f"❌ Erro de ligação ao Azure SQL: {e}")
         return None

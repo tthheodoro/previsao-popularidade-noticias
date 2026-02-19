@@ -6,7 +6,7 @@ def migrar_csv_para_sql():
     # 1. Encontrar o CSV
     caminho_csv = "noticias_portugal.csv"
     if not os.path.exists(caminho_csv):
-        caminho_csv = "data/noticias_portugal.csv"
+        caminho_csv = "noticias_portugal.csv"
     
     if not os.path.exists(caminho_csv):
         print("❌ Erro: Não encontro o ficheiro 'noticias_portugal.csv'.")

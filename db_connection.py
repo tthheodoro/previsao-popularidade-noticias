@@ -9,7 +9,7 @@ PASSWORD = '@Adminprevisao'
 
 def get_connection():
     try:
-        # O pymssql liga-se diretamente sem precisar de drivers ODBC no sistema
+        
         return pymssql.connect(server=SERVER, user=USERNAME, password=PASSWORD, database=DATABASE)
     except Exception as e:
         print(f"❌ Erro de ligação ao Azure SQL: {e}")

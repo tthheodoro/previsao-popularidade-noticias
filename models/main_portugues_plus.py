@@ -1,5 +1,5 @@
 # ============================================================
-# TREINO DO MODELO - SQL SERVER EDITION 🧠
+# TREINO DO MODELO - SQL SERVER EDITION 
 # ============================================================
 import pandas as pd
 import numpy as np
@@ -19,7 +19,11 @@ print("🚀 A ligar à Base de Dados SQL Server...")
 
 # 1. CARREGAR DADOS DO SQL (Histórico + Feedback juntos)
 try:
-    df_noticias, df_feedback = db_connection.carregar_dados_treino()
+    df_noticias, df_feedback = db_connection.carregar_dados_treino()  
+    df_noticias.columns = df_noticias.columns.str.lower()
+    if not df_feedback.empty:
+        df_feedback.columns = df_feedback.columns.str.lower()
+    print(f"Colunas detetadas: {list(df_noticias.columns)}") # Isto ajuda-nos a confirmar
     print(f"✅ Dados carregados: {len(df_noticias)} notícias históricas | {len(df_feedback)} feedbacks humanos.")
 except Exception as e:
     print(f"❌ Erro ao ligar à BD: {e}")

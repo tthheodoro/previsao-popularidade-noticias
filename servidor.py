@@ -8,12 +8,14 @@ import db_connection
 app = Flask(__name__)
 
 # 1. Carregar o Modelo
-path_modelo = "models/modelo_portugues_plus.pkl"
+base_path = os.path.dirname(__file__)
+path_modelo = os.path.join(base_path, "models", "modelo_portugues_plus.pkl")
+
 try:
     modelo = joblib.load(path_modelo)
-    print("✅ Modelo carregado com sucesso!")
+    print(f"✅ Modelo carregado do caminho: {path_modelo}")
 except Exception as e:
-    print(f"❌ Erro ao carregar o modelo: {e}")
+    print(f"❌ Erro fatal ao carregar o modelo: {e}")
     modelo = None
 
 # ==========================================

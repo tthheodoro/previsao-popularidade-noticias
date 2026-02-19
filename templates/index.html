@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsão de Notícias | AI Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* TEMA BASE - Light Mode Moderno */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; 
+            padding: 40px 20px; 
+            background-color: #f3f4f6; 
+            color: #334155d8; 
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        /* O CARTÃO PRINCIPAL */
+        .container { 
+            max-width: 800px; 
+            width: 100%;
+            background: #ffffff; 
+            padding: 40px; 
+            border-radius: 16px; 
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08); 
+            border: 1px solid #e2e8f0;
+            position: relative; /* Necessário para a notificação flutuar corretamente */
+        }
+
+        /* CABEÇALHO */
+        h1 { 
+            font-size: 28px; 
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 30px;
+            color: #0f172a; 
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 15px;
+        }
+        
+        /* GRELHA DO FORMULÁRIO */
+        .row { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;}
+        .col { flex: 1; display: flex; flex-direction: column; min-width: 200px;}
+        
+        /* INPUTS E LABELS */
+        label { 
+            font-size: 13px; 
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px; 
+            color: #64748b; 
+        }
+        input, select, textarea { 
+            width: 100%; 
+            padding: 14px; 
+            border: 1px solid #cbd5e1; 
+            border-radius: 8px; 
+            background-color: #f8fafc; 
+            color: #1e293b; 
+            box-sizing: border-box; 
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+        input:focus, select:focus, textarea:focus { 
+            outline: none; 
+            border-color: #3b82f6; 
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+        
+        textarea { resize: vertical; height: 120px; }
+        
+        /* BOTÃO PRINCIPAL */
+        button.btn-prever { 
+            background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); 
+            border: none; 
+            color: white; 
+            padding: 16px 24px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: 600;
+            width: 100%; 
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+        button.btn-prever:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+        
+        /* CAIXA DE RESULTADOS */
+        .box { 
+            display: none; 
+            margin-top: 40px; 
+            padding: 25px; 
+            border-radius: 12px; 
+            background: #ecfdf5; 
+            border: 1px solid #a7f3d0;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .box h3 { margin: 0; color: #047857; font-size: 22px;}
+        
+        /* ÁREA DE FEEDBACK */
+        .feedback-section { margin-top: 25px; border-top: 1px solid #d1fae5; padding-top: 20px;}
+        .feedback-section p { color: #475569; font-size: 14px; margin-bottom: 15px;}
+        
+        .feedback-btns { display: flex; gap: 12px; }
+        .feedback-btns button { 
+            flex: 1; padding: 12px; border: none; border-radius: 6px; cursor: pointer; 
+            font-weight: 600; transition: all 0.2s; color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .btn-baixa { background-color: #ef4444; }
+        .btn-media { background-color: #f59e0b; }
+        .btn-alta { background-color: #10b981; }
+        .feedback-btns button:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* NOVA NOTIFICAÇÃO DE SUCESSO (TOAST) */
+        .notificacao {
+            display: none;
+            background-color: #10b981;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            animation: slideDown 0.4s ease-out;
+        }
+        .notificacao.erro {
+            background-color: #ef4444;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        @keyframes slideDown { 
+            from { opacity: 0; transform: translateY(-15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="notificacao" class="notificacao"></div>
+
+    <h1>Previsão de Popularidade</h1>
+    
+    <div class="row">
+        <div class="col">
+            <label>Categoria</label>
+            <select id="categoria">
+                <option value="politica">Política</option>
+                <option value="economia">Economia</option>
+                <option value="cultura">Cultura</option>
+                <option value="desporto">Desporto</option>
+                <option value="país">País</option>
+                <option value="geral">Geral</option>
+            </select>
+        </div>
+        <div class="col">
+            <label>Data de Publicação</label>
+            <input type="date" id="data_pub">
+        </div>
+        <div class="col">
+            <label>Hora de Publicação</label>
+            <input type="time" id="hora_pub">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <label>Título da Notícia</label>
+            <input type="text" id="titulo" placeholder="Ex: Governo aprova novo pacote de medidas...">
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col">
+            <label>Descrição / Corpo da Notícia</label>
+            <textarea id="descricao" placeholder="Cola aqui o primeiro parágrafo ou o resumo da notícia..."></textarea>
+        </div>
+    </div>
+
+    <button class="btn-prever" onclick="fazerPrevisao()">Prever Popularidade</button>
+
+    <div id="resultadoArea" class="box">
+        <h3 id="textoResultado">Previsão: </h3>
+        
+        <div class="feedback-section">
+            <p><strong>A previsão foi correta?</strong> Indica o nível de popularidade real:</p>
+            <div class="feedback-btns">
+                <button class="btn-baixa" onclick="enviarFeedback('Baixa')">Baixa</button>
+                <button class="btn-media" onclick="enviarFeedback('Média')">Média</button>
+                <button class="btn-alta" onclick="enviarFeedback('Alta')">Alta</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.onload = function() {
+        const hoje = new Date();
+        document.getElementById('data_pub').value = hoje.toISOString().split('T')[0];
+        document.getElementById('hora_pub').value = hoje.toTimeString().substring(0,5);
+    };
+
+    let dadosSalvosParaFeedback = null;
+
+    // Função auxiliar para mostrar a notificação no ecrã
+    function mostrarNotificacao(mensagem, tipo = 'sucesso') {
+        const notif = document.getElementById('notificacao');
+        notif.innerText = mensagem;
+        notif.className = 'notificacao ' + (tipo === 'erro' ? 'erro' : '');
+        notif.style.display = 'block';
+
+        // Esconder automaticamente passado 5 segundos
+        setTimeout(() => {
+            notif.style.display = 'none';
+        }, 5000);
+    }
+
+    function fazerPrevisao() {
+        // Esconder notificação antiga, se houver
+        document.getElementById('notificacao').style.display = 'none';
+
+        const btn = document.querySelector('.btn-prever');
+        const btnOriginalText = btn.innerText;
+        btn.innerText = "A analisar...";
+        btn.style.opacity = "0.7";
+
+        const payload = {
+            titulo: document.getElementById('titulo').value,
+            descricao: document.getElementById('descricao').value,
+            categoria: document.getElementById('categoria').value,
+            data: document.getElementById('data_pub').value,
+            hora: document.getElementById('hora_pub').value
+        };
+
+        fetch('/prever', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.innerText = btnOriginalText;
+            btn.style.opacity = "1";
+
+            if(data.sucesso) {
+                document.getElementById('resultadoArea').style.display = 'block';
+                document.getElementById('textoResultado').innerText = "✅ Nível de Popularidade: " + data.previsao.toUpperCase();
+                dadosSalvosParaFeedback = data.dados_salvos;
+            } else {
+                mostrarNotificacao("Erro na previsão: " + data.erro, 'erro');
+            }
+        }).catch(err => {
+            btn.innerText = btnOriginalText;
+            btn.style.opacity = "1";
+            mostrarNotificacao("Erro de ligação ao servidor.", 'erro');
+        });
+    }
+
+    function enviarFeedback(realidade) {
+        if(!dadosSalvosParaFeedback) return;
+
+        fetch('/feedback', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ dados: dadosSalvosParaFeedback, realidade: realidade })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.sucesso) {
+                // Em vez de alert(), usamos a nossa nova função!
+                mostrarNotificacao("✅ Obrigado! O teu feedback foi registado e o modelo será ajustado.");
+                
+                // Esconder o resultado e limpar formulário
+                document.getElementById('resultadoArea').style.display = 'none';
+                document.getElementById('titulo').value = '';
+                document.getElementById('descricao').value = '';
+            } else {
+                mostrarNotificacao("Erro ao guardar feedback.", 'erro');
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

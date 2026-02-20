@@ -134,24 +134,30 @@ def prever():
     
 @app.route('/prever_social', methods=['POST'])
 def prever_social():
-    
     dados = request.json
     try:
-        # Extrair os dados da rede social (O Kaggle/UCI usa meses de 1-12 e dias 1-7)
+        texto = dados.get('texto_social', '')
+        
+        # Processamento NLP simples (Contar palavras e hashtags)
+        n_palavras = len(texto.split())
+        n_hashtags = texto.count('#')
+        seguidores = int(dados.get('seguidores', 1000))
+        
         dados_modelo = {
             "Type": dados.get('tipo_post', 'Photo'),
             "Category": int(dados.get('categoria_social', 1)),
             "Post Month": int(dados.get('mes', 1)),
             "Post Weekday": int(dados.get('dia_semana', 1)),
             "Post Hour": int(dados.get('hora', 12)),
-            "Paid": int(dados.get('pago', 0))
+            "Paid": int(dados.get('pago', 0)),
+            "Seguidores": seguidores,
+            "N_Hashtags": n_hashtags,
+            "N_Palavras": n_palavras
         }
         
-        # O modelo exige que seja um DataFrame com os nomes exatos das colunas
         df_input = pd.DataFrame([dados_modelo])
         previsao = modelo_social.predict(df_input)[0]
-        dados_modelo['texto_social'] = texto
-
+        
         return jsonify({
             "sucesso": True, 
             "previsao": previsao,

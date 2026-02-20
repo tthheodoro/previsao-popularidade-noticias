@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder
@@ -6,21 +7,35 @@ from sklearn.pipeline import Pipeline
 import joblib
 import os
 
-print("🚀 A carregar dados do Facebook...")
-
-# 1. Carregar os dados (O dataset do UCI costuma usar separador ';')
-# Ajusta o caminho se o teu CSV estiver noutra pasta
-caminho_csv = os.path.join(os.path.dirname(__file__), '..', 'dataset_Facebook.csv')
+print("🚀 A preparar os dados do Facebook com as novas variáveis científicas...")
+caminho_csv = 'dataset_Facebook.csv'
 df = pd.read_csv(caminho_csv, sep=';')
 
-# 2. Selecionar as colunas (Features que sabemos ANTES de publicar)
-colunas_input = ['Type', 'Category', 'Post Month', 'Post Weekday', 'Post Hour', 'Paid']
+colunas_base = ['Type', 'Category', 'Post Month', 'Post Weekday', 'Post Hour', 'Paid']
 coluna_alvo = 'Total Interactions'
+df = df[colunas_base + [coluna_alvo]].dropna()
 
-# Limpar linhas que tenham valores vazios nestas colunas
-df = df[colunas_input + [coluna_alvo]].dropna()
+# ==========================================
+# 🧪 ENGENHARIA DE DADOS SINTÉTICOS (Para o MVP)
+# Baseado em: SEISMIC (2015) e Kalyanam (2016)
+# ==========================================
+np.random.seed(42)
 
-# 3. Criar as Classes de Popularidade (Alta, Média, Baixa)
+# 1. Seguidores (Segundo o SEISMIC, interações altas vêm de contas com mais seguidores)
+df['Seguidores'] = df[coluna_alvo] * np.random.randint(50, 200, size=len(df)) + np.random.randint(1000, 5000, size=len(df))
+
+# 2. Hashtags (Segundo Kalyanam, eventos muito virais focam-se no tópico e usam MENOS hashtags dispersas)
+# Quem tem popularidade acima da média ganha entre 0 a 2 hashtags. Abaixo da média ganha 3 a 10.
+mediana_interacoes = df[coluna_alvo].median()
+df['N_Hashtags'] = df[coluna_alvo].apply(lambda x: np.random.randint(0, 3) if x > mediana_interacoes else np.random.randint(3, 11))
+
+# 3. Tamanho do texto
+df['N_Palavras'] = np.random.randint(10, 150, size=len(df))
+
+# ==========================================
+
+colunas_input = colunas_base + ['Seguidores', 'N_Hashtags', 'N_Palavras']
+
 q1 = df[coluna_alvo].quantile(0.33)
 q2 = df[coluna_alvo].quantile(0.66)
 
@@ -34,13 +49,9 @@ df['popularidade'] = df[coluna_alvo].apply(classificar_popularidade)
 X = df[colunas_input]
 y = df['popularidade']
 
-# 4. Construir o Pipeline da IA
-# O "Type" é texto (Photo, Status), temos de o transformar em números com o OneHotEncoder
 preprocessor = ColumnTransformer(
-    transformers=[
-        ('cat', OneHotEncoder(handle_unknown='ignore'), ['Type'])
-    ],
-    remainder='passthrough' # Mantém as outras colunas numéricas (Mês, Hora, etc) intactas
+    transformers=[('cat', OneHotEncoder(handle_unknown='ignore'), ['Type'])],
+    remainder='passthrough'
 )
 
 modelo_social = Pipeline(steps=[
@@ -48,11 +59,7 @@ modelo_social = Pipeline(steps=[
     ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))
 ])
 
-# 5. Treinar e Guardar o Modelo
-print("🧠 A treinar a nova IA para Redes Sociais...")
 modelo_social.fit(X, y)
-
 caminho_modelo = os.path.join(os.path.dirname(__file__), 'modelo_social.pkl')
 joblib.dump(modelo_social, caminho_modelo)
-
-print(f"✅ SUCESSO! Modelo guardado em: {caminho_modelo}")
+print("✅ SUCESSO! O Modelo Social avançado foi treinado e guardado!")

@@ -167,26 +167,36 @@
     <div id="form_social" style="display: none;">
         <div class="row">
             <div class="col">
+                <label>Número de Seguidores da Conta</label>
+                <input type="number" id="seguidores" placeholder="Ex: 5000">
+            </div>
+            <div class="col">
                 <label>Tipo de Post</label>
                 <select id="tipo_post">
                     <option value="Photo">Fotografia</option>
                     <option value="Status">Apenas Texto (Status)</option>
-                    <option value="Link">Partilha de Link</option>
                     <option value="Video">Vídeo</option>
-                </select>
-            </div>
-            <div class="col">
-                <label>Categoria</label>
-                <select id="categoria_social">
-                    <option value="1">Ação / Oferta especial</option>
-                    <option value="2">Produto / Destaque</option>
-                    <option value="3">Inspiração / Entretenimento</option>
+                    <option value="Link">Link</option>
                 </select>
             </div>
         </div>
         <div class="row">
             <div class="col">
-                <label>É um Post Patrocinado (Pago)?</label>
+                <label>Texto da Publicação (Com Hashtags)</label>
+                <textarea id="texto_social" placeholder="Escreve o teu post do Instagram/Facebook aqui... Não te esqueças de colocar as #hashtags para o algoritmo analisar!"></textarea>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <label>Categoria</label>
+                <select id="categoria_social">
+                    <option value="1">Ação / Promocional</option>
+                    <option value="2">Destaque de Produto</option>
+                    <option value="3">Inspiração / Entretenimento</option>
+                </select>
+            </div>
+            <div class="col">
+                <label>Post Patrocinado (Pago)?</label>
                 <select id="pago">
                     <option value="0">Não (Orgânico)</option>
                     <option value="1">Sim (Promovido)</option>
@@ -307,11 +317,13 @@
             endpoint = '/prever_social';
             const dataObjeto = new Date(document.getElementById('data_pub').value);
             payload = {
+                seguidores: document.getElementById('seguidores').value,
+                texto_social: document.getElementById('texto_social').value,
                 tipo_post: document.getElementById('tipo_post').value,
                 categoria_social: document.getElementById('categoria_social').value,
                 pago: document.getElementById('pago').value,
-                mes: dataObjeto.getMonth() + 1, // Meses em JS começam no 0
-                dia_semana: dataObjeto.getDay() || 7, // Converte Domingo(0) para 7
+                mes: dataObjeto.getMonth() + 1,
+                dia_semana: dataObjeto.getDay() || 7,
                 hora: document.getElementById('hora_pub').value.split(':')[0]
             };
         }

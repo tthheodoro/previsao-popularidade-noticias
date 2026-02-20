@@ -134,6 +134,7 @@ def prever():
     
 @app.route('/prever_social', methods=['POST'])
 def prever_social():
+    
     dados = request.json
     try:
         # Extrair os dados da rede social (O Kaggle/UCI usa meses de 1-12 e dias 1-7)
@@ -149,7 +150,8 @@ def prever_social():
         # O modelo exige que seja um DataFrame com os nomes exatos das colunas
         df_input = pd.DataFrame([dados_modelo])
         previsao = modelo_social.predict(df_input)[0]
-        
+        dados_modelo['texto_social'] = texto
+
         return jsonify({
             "sucesso": True, 
             "previsao": previsao,
@@ -162,7 +164,17 @@ def prever_social():
 def feedback():
     dados_feedback = request.json
     try:
-        db_connection.salvar_feedback(dados_feedback['dados'], dados_feedback['realidade'])
+        dados = dados_feedback['dados']
+        realidade = dados_feedback['realidade']
+        
+        # O Roteamento Inteligente:
+        if 'Seguidores' in dados:
+            # Se tem seguidores, é da rede social!
+            db_connection.salvar_feedback_social(dados, realidade)
+        else:
+            # Se não tem, é uma notícia normal!
+            db_connection.salvar_feedback(dados, realidade)
+            
         return jsonify({"sucesso": True})
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)})

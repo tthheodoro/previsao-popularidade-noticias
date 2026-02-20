@@ -55,3 +55,31 @@ def carregar_dados_treino():
     df_feedback = pd.read_sql("SELECT * FROM Feedback", conn)
     conn.close()
     return df_noticias, df_feedback
+
+def salvar_feedback_social(dados, realidade):
+    conn = get_connection()
+    if not conn: return
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            INSERT INTO dbo.Feedback_Social 
+            (Texto_Post, Seguidores, Tipo_Post, Categoria, Mes, Dia_Semana, Hora, Pago, N_Hashtags, N_Palavras, Popularidade_Real)
+            VALUES (%s, %d, %s, %d, %d, %d, %d, %d, %d, %d, %s)
+        """, (
+            dados.get('texto_social', ''), 
+            int(dados['Seguidores']), 
+            dados['Type'],
+            int(dados['Category']), 
+            int(dados['Post Month']), 
+            int(dados['Post Weekday']),
+            int(dados['Post Hour']), 
+            int(dados['Paid']), 
+            int(dados['N_Hashtags']),
+            int(dados['N_Palavras']), 
+            realidade
+        ))
+        conn.commit()
+    except Exception as e:
+        print(f"❌ Erro ao guardar feedback social: {e}")
+    finally:
+        conn.close()

@@ -7,16 +7,17 @@ import db_connection
 
 app = Flask(__name__)
 
-# 1. Carregar o Modelo
+# 1. Carregar os Modelos
 base_path = os.path.dirname(__file__)
 path_modelo = os.path.join(base_path, "models", "modelo_portugues_plus.pkl")
+path_modelo_social = os.path.join(base_path, "models", "modelo_social.pkl") # NOVA LINHA
 
 try:
     modelo = joblib.load(path_modelo)
-    print(f"✅ Modelo carregado do caminho: {path_modelo}")
+    modelo_social = joblib.load(path_modelo_social) # NOVA LINHA
+    print(f"✅ Modelos carregados com sucesso!")
 except Exception as e:
-    print(f"❌ Erro fatal ao carregar o modelo: {e}")
-    modelo = None
+    print(f"❌ Erro fatal ao carregar os modelos: {e}")
 
 # ==========================================
 # 2. MOTOR DE NLP - ANALISADOR LÉXICO AVANÇADO
@@ -130,7 +131,33 @@ def prever():
         })
     except Exception as e:
         return jsonify({"sucesso": False, "erro": str(e)})
-
+    
+@app.route('/prever_social', methods=['POST'])
+def prever_social():
+    dados = request.json
+    try:
+        # Extrair os dados da rede social (O Kaggle/UCI usa meses de 1-12 e dias 1-7)
+        dados_modelo = {
+            "Type": dados.get('tipo_post', 'Photo'),
+            "Category": int(dados.get('categoria_social', 1)),
+            "Post Month": int(dados.get('mes', 1)),
+            "Post Weekday": int(dados.get('dia_semana', 1)),
+            "Post Hour": int(dados.get('hora', 12)),
+            "Paid": int(dados.get('pago', 0))
+        }
+        
+        # O modelo exige que seja um DataFrame com os nomes exatos das colunas
+        df_input = pd.DataFrame([dados_modelo])
+        previsao = modelo_social.predict(df_input)[0]
+        
+        return jsonify({
+            "sucesso": True, 
+            "previsao": previsao,
+            "dados_salvos": dados_modelo
+        })
+    except Exception as e:
+        return jsonify({"sucesso": False, "erro": str(e)})
+    
 @app.route('/feedback', methods=['POST'])
 def feedback():
     dados_feedback = request.json

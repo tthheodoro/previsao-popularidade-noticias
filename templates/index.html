@@ -155,7 +155,45 @@
     <div id="notificacao" class="notificacao"></div>
 
     <h1>Previsão de Popularidade</h1>
-    
+    <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 25px; text-align: center;">
+        <label style="margin-right: 15px; font-size: 16px; cursor: pointer;">
+            <input type="radio" name="modo_previsao" value="noticias" checked onchange="mudarModo()"> 📰 Notícia
+        </label>
+        <label style="font-size: 16px; cursor: pointer;">
+            <input type="radio" name="modo_previsao" value="social" onchange="mudarModo()"> 📱 Rede Social
+        </label>
+    </div>
+
+    <div id="form_social" style="display: none;">
+        <div class="row">
+            <div class="col">
+                <label>Tipo de Post</label>
+                <select id="tipo_post">
+                    <option value="Photo">Fotografia</option>
+                    <option value="Status">Apenas Texto (Status)</option>
+                    <option value="Link">Partilha de Link</option>
+                    <option value="Video">Vídeo</option>
+                </select>
+            </div>
+            <div class="col">
+                <label>Categoria</label>
+                <select id="categoria_social">
+                    <option value="1">Ação / Oferta especial</option>
+                    <option value="2">Produto / Destaque</option>
+                    <option value="3">Inspiração / Entretenimento</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <label>É um Post Patrocinado (Pago)?</label>
+                <select id="pago">
+                    <option value="0">Não (Orgânico)</option>
+                    <option value="1">Sim (Promovido)</option>
+                </select>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col">
             <label>Categoria</label>
@@ -230,24 +268,55 @@
         }, 5000);
     }
 
-    function fazerPrevisao() {
-        // Esconder notificação antiga, se houver
-        document.getElementById('notificacao').style.display = 'none';
+    function mudarModo() {
+        const modo = document.querySelector('input[name="modo_previsao"]:checked').value;
+        const formNoticias = document.querySelectorAll('.row:not(#form_social .row)'); // Pega nas linhas antigas
+        const formSocial = document.getElementById('form_social');
+        
+        if (modo === 'noticias') {
+            formSocial.style.display = 'none';
+            // Mostrar os campos de notícias
+            formNoticias.forEach(row => { if(!row.closest('#form_social')) row.style.display = 'flex'; });
+        } else {
+            formSocial.style.display = 'block';
+            // Esconder os campos de notícias
+            formNoticias.forEach(row => { if(!row.closest('#form_social')) row.style.display = 'none'; });
+        }
+    }
 
+    function fazerPrevisao() {
+        document.getElementById('notificacao').style.display = 'none';
         const btn = document.querySelector('.btn-prever');
         const btnOriginalText = btn.innerText;
         btn.innerText = "A analisar...";
         btn.style.opacity = "0.7";
 
-        const payload = {
-            titulo: document.getElementById('titulo').value,
-            descricao: document.getElementById('descricao').value,
-            categoria: document.getElementById('categoria').value,
-            data: document.getElementById('data_pub').value,
-            hora: document.getElementById('hora_pub').value
-        };
+        const modo = document.querySelector('input[name="modo_previsao"]:checked').value;
+        let endpoint = '/prever';
+        let payload = {};
 
-        fetch('/prever', {
+        if (modo === 'noticias') {
+            payload = {
+                titulo: document.getElementById('titulo').value,
+                descricao: document.getElementById('descricao').value,
+                categoria: document.getElementById('categoria').value,
+                data: document.getElementById('data_pub').value,
+                hora: document.getElementById('hora_pub').value
+            };
+        } else {
+            endpoint = '/prever_social';
+            const dataObjeto = new Date(document.getElementById('data_pub').value);
+            payload = {
+                tipo_post: document.getElementById('tipo_post').value,
+                categoria_social: document.getElementById('categoria_social').value,
+                pago: document.getElementById('pago').value,
+                mes: dataObjeto.getMonth() + 1, // Meses em JS começam no 0
+                dia_semana: dataObjeto.getDay() || 7, // Converte Domingo(0) para 7
+                hora: document.getElementById('hora_pub').value.split(':')[0]
+            };
+        }
+
+        fetch(endpoint, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
@@ -256,7 +325,6 @@
         .then(data => {
             btn.innerText = btnOriginalText;
             btn.style.opacity = "1";
-
             if(data.sucesso) {
                 document.getElementById('resultadoArea').style.display = 'block';
                 document.getElementById('textoResultado').innerText = "✅ Nível de Popularidade: " + data.previsao.toUpperCase();
@@ -264,12 +332,10 @@
             } else {
                 mostrarNotificacao("Erro na previsão: " + data.erro, 'erro');
             }
-        }).catch(err => {
-            btn.innerText = btnOriginalText;
-            btn.style.opacity = "1";
-            mostrarNotificacao("Erro de ligação ao servidor.", 'erro');
         });
     }
+    
+    setTimeout(mudarModo, 100);
 
     function enviarFeedback(realidade) {
         if(!dadosSalvosParaFeedback) return;

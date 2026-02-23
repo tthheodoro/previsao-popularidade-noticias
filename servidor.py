@@ -158,6 +158,8 @@ def prever_social():
         df_input = pd.DataFrame([dados_modelo])
         previsao = modelo_social.predict(df_input)[0]
         
+        dados_modelo['texto_social'] = texto
+
         return jsonify({
             "sucesso": True, 
             "previsao": previsao,

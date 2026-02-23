@@ -19,19 +19,31 @@ def salvar_noticias_batch(df):
     conn = get_connection()
     if not conn: return
     cursor = conn.cursor()
-    for _, row in df.iterrows():
-        try:
-            cursor.execute("""
-                INSERT INTO Noticias (Titulo, Descricao, Link, DataPublicacao, Fonte, Categoria, N_Palavras_Titulo, N_Palavras_Desc, Dia_Semana, Hora, Sentimento)
-                VALUES (%s, %s, %s, %s, %s, %s, %d, %d, %d, %d, %d)
-            """, (
-                row['titulo'], row['descricao'], row['link'], row['data_publicacao'],
-                row['fonte'], row['categoria'], int(row['n_palavras_titulo']),
-                int(row['n_palavras_desc']), int(row['dia_semana']), int(row['hora']), int(row['sentimento'])
-            ))
-        except: continue
-    conn.commit()
-    conn.close()
+    
+    try:
+        for index, row in df.iterrows():
+            # Verifica se a notícia já existe pelo link (para não haver repetidas)
+            cursor.execute("SELECT COUNT(*) FROM dbo.Noticias WHERE Link = %s", (row['link'],))
+            if cursor.fetchone()[0] == 0:
+                
+                # AQUI ESTÁ A CORREÇÃO: DataPublicacao (sem traço inferior!)
+                cursor.execute("""
+                    INSERT INTO dbo.Noticias 
+                    (Titulo, Descricao, Link, DataPublicacao, Fonte, Categoria, 
+                     N_Palavras_Titulo, N_Palavras_Desc, Dia_Semana, Hora, Sentimento, Popularidade_Real)
+                    VALUES (%s, %s, %s, %s, %s, %s, %d, %d, %d, %d, %d, %s)
+                """, (
+                    row['titulo'], row['descricao'], row['link'], row['data_publicacao'],
+                    row['fonte'], row['categoria'], row['n_palavras_titulo'], 
+                    row['n_palavras_desc'], row['dia_semana'], row['hora'], 
+                    row['sentimento'], row['popularidade_real']
+                ))
+        conn.commit()
+        print("✅ Lote de notícias guardado no Azure com sucesso!")
+    except Exception as e:
+        print(f"❌ Erro ao guardar no Azure: {e}")
+    finally:
+        conn.close()
 
 def salvar_feedback(dados, realidade):
     conn = get_connection()

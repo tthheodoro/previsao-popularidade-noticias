@@ -1,0 +1,51 @@
+name: MLOps - Treino Bi-semanal da IA
+
+on:
+  schedule:
+    - cron: "0 0 1,15 * *" # Dias 1 e 15 de cada mês
+  workflow_dispatch:
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Código
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Instalar Dependências
+        run: |
+          pip install -r requirements.txt
+
+      - name: Executar Treino Social e Website
+        env:
+          DB_SERVER: ${{ secrets.DB_SERVER }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+        run: |
+          python models/treinar_social.py
+          python models/treinar_noticias.py
+
+      - name: Publicar Modelos no Repositório
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add -f models/*.pkl
+          git commit -m "🤖 MLOps: Modelos Social e Web atualizados" || echo "Sem alterações"
+          git push
+      - name: Sincronizar com o Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git push https://previsao:$HF_TOKEN@huggingface.co/spaces/previsao/previsao main --force

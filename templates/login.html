@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso | AI Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-body">
+
+    <div class="login-container">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <rect width="40" height="40" rx="8" fill="#3b82f6"/>
+            <path d="M20 12C16.5 12 13.5 15 13.5 18.5V20H13C12.45 20 12 20.45 12 21V28C12 28.55 12.45 29 13 29H27C27.55 29 28 28.55 28 28V21C28 20.45 27.55 20 27 20H26.5V18.5C26.5 15 23.5 12 20 12ZM20 14C22.49 14 24.5 16.01 24.5 18.5V20H15.5V18.5C15.5 16.01 17.51 14 20 14Z" fill="white"/>
+        </svg>
+
+        <h2 id="titulo-form">Iniciar Sessão</h2>
+
+        <div id="mensagem-alerta" class="alert-msg"></div>
+
+        <div class="input-group" id="grupo-nome" style="display: none;">
+            <input type="text" id="input-nome" placeholder="Nome Completo">
+        </div>
+
+        <div class="input-group">
+            <input type="email" id="input-email" placeholder="E-mail">
+        </div>
+
+        <div class="input-group">
+            <input type="password" id="input-password" placeholder="Password">
+        </div>
+
+        <div class="input-group" id="grupo-confirmar-password" style="display: none;">
+            <input type="password" id="input-confirmar-password" placeholder="Confirmar Password">
+        </div>
+
+        <button id="btn-acao" class="btn-login" onclick="submeterFormulario()">Entrar</button>
+
+        <a class="toggle-link" onclick="alternarModo()" id="link-alternativa">Não tem conta? Criar conta</a>
+        <a class="toggle-link" href="/" style="opacity: 0.5;">Continuar sem conta</a>
+    </div>
+
+    <script>
+        let modoRegisto = false;
+
+        function alternarModo() {
+            modoRegisto = !modoRegisto;
+            const grupoNome = document.getElementById('grupo-nome');
+            const grupoConfirmarPassword = document.getElementById('grupo-confirmar-password');
+            const tituloForm = document.getElementById('titulo-form');
+            const btnAcao = document.getElementById('btn-acao');
+            const linkAlternativa = document.getElementById('link-alternativa');
+            const alerta = document.getElementById('mensagem-alerta');
+            
+            alerta.style.display = 'none';
+            document.getElementById('input-password').value = '';
+            document.getElementById('input-confirmar-password').value = '';
+
+            if (modoRegisto) {
+                grupoNome.style.display = 'block';
+                grupoConfirmarPassword.style.display = 'block';
+                tituloForm.innerText = 'Criar Conta';
+                btnAcao.innerText = 'Registar';
+                linkAlternativa.innerText = 'Já tem conta? Iniciar Sessão';
+            } else {
+                grupoNome.style.display = 'none';
+                grupoConfirmarPassword.style.display = 'none';
+                tituloForm.innerText = 'Iniciar Sessão';
+                btnAcao.innerText = 'Entrar';
+                linkAlternativa.innerText = 'Não tem conta? Criar conta';
+            }
+        }
+
+        function mostrarAlerta(mensagem, corTexto) {
+            const alerta = document.getElementById('mensagem-alerta');
+            alerta.innerText = mensagem;
+            alerta.style.color = corTexto;
+            alerta.style.display = 'block';
+        }
+
+        async function submeterFormulario() {
+            const nome = document.getElementById('input-nome').value;
+            const email = document.getElementById('input-email').value;
+            const password = document.getElementById('input-password').value;
+            const confirmarPassword = document.getElementById('input-confirmar-password').value;
+            const btnAcao = document.getElementById('btn-acao');
+
+            if (!email || !password || (modoRegisto && (!nome || !confirmarPassword))) {
+                mostrarAlerta('Preencha todos os campos.', '#ef4444');
+                return;
+            }
+
+            if (modoRegisto && password !== confirmarPassword) {
+                mostrarAlerta('As passwords não coincidem.', '#ef4444');
+                return;
+            }
+
+            if (password.length < 6) {
+                mostrarAlerta('Mínimo 6 caracteres.', '#ef4444');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                mostrarAlerta('Email inválido.', '#ef4444');
+                return;
+            }
+            
+            btnAcao.disabled = true;
+            btnAcao.innerText = 'A processar...';
+
+            try {
+                const endpoint = modoRegisto ? '/api/registar' : '/api/login';
+                const payload = modoRegisto ? { nome, email, password } : { email, password };
+
+                const resposta = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const dados = await resposta.json();
+
+                if (dados.sucesso) {
+                    if (modoRegisto) {
+                        mostrarAlerta('Conta criada!', '#22c55e');
+                        setTimeout(() => { alternarModo(); btnAcao.disabled = false; }, 1500);
+                    } else {
+                        localStorage.setItem('jwt_token', dados.token);
+                        localStorage.setItem('user_nome', dados.nome);
+                        mostrarAlerta('A redirecionar...', '#22c55e');
+                        setTimeout(() => { window.location.href = '/'; }, 800);
+                    }
+                } else {
+                    mostrarAlerta(dados.erro, '#ef4444');
+                    btnAcao.disabled = false;
+                    btnAcao.innerText = modoRegisto ? 'Registar' : 'Entrar';
+                }
+            } catch (erro) {
+                mostrarAlerta('Erro de conexão.', '#ef4444');
+                btnAcao.disabled = false;
+                btnAcao.innerText = modoRegisto ? 'Registar' : 'Entrar';
+            }
+        }
+    </script>
+</body>
+</html>

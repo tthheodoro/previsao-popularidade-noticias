@@ -1,0 +1,27 @@
+name: Sync to Hugging Face hub
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          echo "Token length: ${#HF_TOKEN}"
+          if [ -z "$HF_TOKEN" ]; then
+            echo "ERROR: HF_TOKEN is empty. Check your GitHub repository secrets."
+            exit 1
+          fi
+          git remote set-url origin https://previsao:$HF_TOKEN@huggingface.co/spaces/previsao/previsao
+          git push origin main --force

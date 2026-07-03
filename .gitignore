@@ -1,0 +1,51 @@
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ML models (large files)
+*.pkl
+models/*.pkl
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Generated charts
+grafico_*.png
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Desktop.ini

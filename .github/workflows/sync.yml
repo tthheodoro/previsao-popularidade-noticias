@@ -14,37 +14,7 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Configure git identity
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-
-      - name: Install and configure Git LFS
-        run: |
-          git lfs install
-          git lfs track "*.pkl"
-          git lfs track "*.db"
-          git lfs track "*.png"
-          git add .gitattributes
-
-      - name: Convert binary files to LFS pointers
-        run: |
-          git rm --cached -f models/*.pkl data/*.csv 2>/dev/null || true
-          git add -f models/*.pkl data/*.csv 2>/dev/null || true
-          git add -A
-
-      - name: Commit LFS tracking changes
-        run: |
-          git commit -m "chore: add LFS tracking for binary files" --allow-empty || echo "No changes to commit"
-
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          echo "Token length: ${#HF_TOKEN}"
-          if [ -z "$HF_TOKEN" ]; then
-            echo "ERROR: HF_TOKEN is empty. Check your GitHub repository secrets."
-            exit 1
-          fi
-          git remote set-url origin https://previsao:$HF_TOKEN@huggingface.co/spaces/previsao/previsao
-          git push origin main --force
+        run: git push https://previsao:$HF_TOKEN@huggingface.co/spaces/previsao/previsao main

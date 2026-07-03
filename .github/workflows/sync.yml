@@ -14,6 +14,21 @@ jobs:
           fetch-depth: 0
           lfs: true
 
+      - name: Install and configure Git LFS
+        run: |
+          git lfs install
+          git lfs track "*.pkl"
+          git lfs track "*.db"
+          git lfs track "*.png"
+          git add .gitattributes
+
+      - name: Convert binary files to LFS pointers
+        run: |
+          # Remove binaries from index then re-add (triggers LFS clean filter)
+          git rm --cached -f models/*.pkl data/*.csv 2>/dev/null || true
+          git add -f models/*.pkl data/*.csv 2>/dev/null || true
+          git add -A
+
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -24,4 +39,5 @@ jobs:
             exit 1
           fi
           git remote set-url origin https://previsao:$HF_TOKEN@huggingface.co/spaces/previsao/previsao
+          git commit -m "Update: sync with LFS tracking" --allow-empty || true
           git push origin main --force

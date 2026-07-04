@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Predictor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+    <div class="app-shell">
+        <div class="app-frame">
+
+            <!-- Topbar -->
+            <div class="topbar">
+                <div class="brand">
+                    <div class="brand-mark">AI</div>
+                    <div class="brand-copy">
+                        <h1>Popularity Predictor</h1>
+                        <p>Previsão de popularidade com machine learning</p>
+                    </div>
+                </div>
+                <div class="topbar-status">
+                    <span class="status-dot"></span>
+                    Sistema ativo
+                </div>
+                <div class="topbar-user" id="zona-utilizador"></div>
+            </div>
+
+            <!-- Dashboard -->
+            <div class="dashboard">
+                
+                <!-- Main Panel -->
+                <div class="panel main-panel">
+                    <div class="section-head">
+                        <h2>Nova análise</h2>
+                        <p>Insere os dados da publicação e a IA estima o potencial de popularidade.</p>
+                    </div>
+
+                    <div class="mode-strip">
+                        <div class="col">
+                            <label for="plataforma_destino">Destino da publicação</label>
+                            <select id="plataforma_destino" onchange="mudarModo()" data-custom>
+                                <option value="website">Website / Portal de Notícias</option>
+                                <option value="facebook">Facebook</option>
+                                <option value="instagram">Instagram</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Website Form -->
+                    <div id="form_website">
+                        <div class="form-card">
+                            <h3 class="card-title">Contexto editorial</h3>
+                            <div class="row">
+                                <div class="col flex-2">
+                                    <label for="categoria">Categoria</label>
+                                    <select id="categoria" data-custom>
+                                        <option value="nacional">Nacional</option>
+                                        <option value="politica">Política</option>
+                                        <option value="economia">Economia</option>
+                                        <option value="cultura">Cultura</option>
+                                        <option value="desporto">Desporto</option>
+                                        <option value="geral">Geral</option>
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <label>Data</label>
+                                    <div class="input-group-row">
+                                        <select id="data_dia" data-custom>
+                                            <option value="">Dia</option>
+                                        </select>
+                                        <select id="data_mes" data-custom>
+                                            <option value="">Mês</option>
+                                        </select>
+                                        <select id="data_ano" data-custom>
+                                            <option value="">Ano</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col col-separator">
+                                    <label>Hora</label>
+                                    <div class="input-group-row">
+                                        <select id="hora_h" data-custom>
+                                            <option value="">H</option>
+                                        </select>
+                                        <span class="input-separator">:</span>
+                                        <select id="hora_m" data-custom>
+                                            <option value="">M</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-card">
+                            <h3 class="card-title">Conteúdo</h3>
+                            <div class="row">
+                                <div class="col">
+                                    <label for="titulo">Título</label>
+                                    <input type="text" id="titulo" placeholder="Ex: Governo anuncia novo pacote de medidas económicas" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <label for="descricao">Corpo da notícia</label>
+                                    <textarea id="descricao" placeholder="Descreve o conteúdo principal da notícia..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Form -->
+                    <div id="form_social" style="display: none;">
+                        <div class="form-card">
+                            <h3 class="card-title">Publicação social</h3>
+                            <div class="row">
+                                <div class="col flex-2">
+                                    <label for="imagem_social">Imagem</label>
+                                    <input type="file" id="imagem_social" accept="image/*" />
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col">
+                                    <label for="texto_social">Texto da publicação</label>
+                                    <textarea id="texto_social" placeholder="Escreve o copy do post..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-card">
+                            <h3 class="card-title">Métricas simuladas</h3>
+                            <div class="kpi-grid">
+                                <div class="kpi-card">
+                                    <span>Likes</span>
+                                    <input type="number" id="likes_social" value="0" />
+                                </div>
+                                <div class="kpi-card">
+                                    <span>Comentários</span>
+                                    <input type="number" id="comentarios_social" value="0" />
+                                </div>
+                                <div class="kpi-card">
+                                    <span>Seguidores</span>
+                                    <input type="number" id="seguidores_social" value="1000" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-prever" onclick="fazerPrevisao()">Analisar com IA</button>
+
+                    <!-- History -->
+                    <div id="historico-container" style="display: none; margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08);">
+                        <div class="historico-header">
+                            <h3>O Meu Histórico</h3>
+                            <button class="btn-refresh" onclick="carregarHistorico()">Atualizar</button>
+                        </div>
+                        <div id="lista-historico" style="max-height: 400px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+
+                <!-- Side Panel -->
+                <div class="panel side-panel">
+                    <div class="side-top">
+                        <h3>Resultado</h3>
+                        <div class="ai-badge">AI Score</div>
+                    </div>
+
+                    <div id="emptyState" class="empty-state">
+                        Executa uma análise para veres a previsão e detalhes da IA.
+                    </div>
+
+                    <div id="resultadoArea" class="box">
+                        <div id="resultadoShell" class="resultado-shell">
+                            
+                            <div class="score-card">
+                                <div class="score-label">Previsão atual</div>
+                                <div id="textoResultado" class="score-value">ALTA</div>
+                                <div id="detalhesIA" class="score-sub"></div>
+                                <div id="caixaSugestoes" class="sugestoes-box" style="display:none;">
+                                    <strong>Sugestões de Melhoria</strong>
+                                    <ul id="listaSugestoes"></ul>
+                                </div>
+                            </div>
+
+                            <div class="result-meta">
+                                <span class="meta-chip">Modelo preditivo ativo</span>
+                                <span class="meta-chip">Resposta contextual</span>
+                            </div>
+
+                            <div class="insight-list">
+                                <div class="insight-item">
+                                    <strong>Leitura do modelo</strong>
+                                    <span>O sistema avalia sinais de conteúdo, contexto e estrutura para gerar a previsão.</span>
+                                </div>
+                                <div class="insight-item">
+                                    <strong>Próximo passo</strong>
+                                    <span>Valida com feedback para melhorar o comportamento do modelo.</span>
+                                </div>
+                            </div>
+
+                            <div id="feedbackArea" class="feedback-box">
+                                <h4>Esta previsão parece correta?</h4>
+                                <p>Ajuda a melhorar o modelo indicando a popularidade real.</p>
+                                <div class="row" style="align-items: flex-end;">
+                                    <div class="col flex-2">
+                                        <label for="popularidade_real_user">Popularidade real esperada</label>
+                                        <select id="popularidade_real_user" data-custom>
+                                            <option value="Alta">Alta (Destaque total)</option>
+                                            <option value="Média">Média (Engajamento normal)</option>
+                                            <option value="Baixa">Baixa (Pouco impacto)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col">
+                                        <button id="btnSubmitFeedback" class="btn-feedback" onclick="enviarFeedback()">Submeter</button>
+                                    </div>
+                                </div>
+                                <p id="mensagemAviso" style="margin-top: 12px; font-size: 13px; font-weight: 600;"></p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='sistema.js') }}"></script>
+</body>
+</html>

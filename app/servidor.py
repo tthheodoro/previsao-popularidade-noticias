@@ -79,17 +79,20 @@ def carregar_recursos():
 
     models_dir = os.path.join(PROJECT_ROOT, "models")
 
-    # Download models from GitHub if not present locally
+    # Download models from GitHub Releases if not present locally
     import urllib.request
-    github_base = "https://raw.githubusercontent.com/tthheodoro/previsao-popularidade-noticias/main/models"
+    import json
+    github_api = "https://api.github.com/repos/tthheodoro/previsao-popularidade-noticias/releases/tags/models-latest"
     for model_file in ["modelo_noticias.pkl", "modelo_social.pkl"]:
         local_path = os.path.join(models_dir, model_file)
         if not os.path.exists(local_path):
             try:
                 os.makedirs(models_dir, exist_ok=True)
-                url = f"{github_base}/{model_file}"
-                logger.info(f"Downloading {model_file} from GitHub...")
-                urllib.request.urlretrieve(url, local_path)
+                resp = urllib.request.urlopen(github_api)
+                release = json.loads(resp.read())
+                asset_url = next(a["browser_download_url"] for a in release["assets"] if a["name"] == model_file)
+                logger.info(f"Downloading {model_file} from GitHub Releases...")
+                urllib.request.urlretrieve(asset_url, local_path)
                 logger.info(f"Downloaded {model_file}")
             except Exception as e:
                 logger.warning(f"Could not download {model_file}: {e}")

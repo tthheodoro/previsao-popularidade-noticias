@@ -1,0 +1,24 @@
+name: Upload Models to Release
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'models/*.pkl'
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+
+      - name: Upload models to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete models-latest --yes 2>/dev/null || true
+          gh release create models-latest models/*.pkl --title "ML Models" --latest --notes "Auto-uploaded models"

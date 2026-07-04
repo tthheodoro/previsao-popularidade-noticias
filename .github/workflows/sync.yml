@@ -13,13 +13,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Push to hub (excluding .pkl files)
+      - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git config --global user.email "bot@example.com"
           git config --global user.name "Bot"
-          git rm --cached models/*.pkl 2>/dev/null || true
-          git commit -m "chore: exclude .pkl from HF push" --allow-empty || true
           git push --force https://previsao:$HF_TOKEN@huggingface.co/spaces/previsao/previsao main
-          git checkout HEAD~1 -- models/ 2>/dev/null || true
